@@ -1,0 +1,206 @@
+---
+  - hosts: server
+    become: true
+    tasks:
+    - name: Create sambashare group
+      group:
+        name: sambashare
+        state: present
+
+    - name: Add the user to group of 'sambashare'
+      user:
+        name: user
+        groups: sambashare
+        append: yes
+
+    - name: Create necessary dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: user
+        group: sambashare
+        mode: 0770
+      with_items:
+        - /media/user/500GB_1
+        - /media/user/500GB_2
+        - /etc/samba
+        - /home/user/.debs
+
+    - name: Copy a new smb.conf file into /etc/samba, backing up the original if it differs from the copied version
+      copy:
+        src: files/samba/smb.conf
+        dest: /etc/samba/smb.conf
+        owner: root
+        group: root
+        mode: 0644
+        backup: yes
+
+    - name: Copy samba + dependencies
+      copy:
+        src: "{{ item }}"
+        dest: /home/user/.debs
+        owner: user
+        group: user
+        mode: 0644
+      with_items:
+        - debs/samba/python-dnspython_all.deb
+        - debs/samba/python-samba_amd64.deb
+        - debs/samba/tdb-tools_amd64.deb
+        - debs/samba/samba-common_all.deb
+        - debs/samba/samba-common-bin_amd64.deb
+        - debs/samba/samba_amd64.deb
+
+    - name: Install samba + dependencies
+      apt: deb="{{ item }}"
+      with_items:
+        - /home/user/.debs/python-dnspython_all.deb
+        - /home/user/.debs/python-samba_amd64.deb
+        - /home/user/.debs/tdb-tools_amd64.deb
+        - /home/user/.debs/samba-common_all.deb
+        - /home/user/.debs/samba-common-bin_amd64.deb
+        - /home/user/.debs/samba_amd64.deb
+
+    - name: Set Samba password for user
+      shell: "printf '261088\n261088\n' | smbpasswd -a user"
+      tags: smbpasswd
+
+    - name: Enable Samba user
+      shell: "smbpasswd -e user"
+      tags: smbpasswd
+
+    - name: Copy a new minidlna file into /etc/default/minidlna, backing up the original if it differs from the copied version
+      copy:
+        src: files/minidlna/minidlna
+        dest: /etc/default/minidlna
+        owner: root
+        group: root
+        mode: 0644
+        backup: yes
+
+    - name: Copy a new minidlna.conf file into /etc/minidlna.conf, backing up the original if it differs from the copied version
+      copy:
+        src: files/minidlna/minidlna.conf
+        dest: /etc/minidlna.conf
+        owner: root
+        group: root
+        mode: 0644
+        backup: yes
+
+    - name: Modify max_user_watches file into /proc/sys/fs/inotify
+      sysctl:
+        name: fs.inotify.max_user_watches
+        value: '524288'
+        sysctl_set: yes
+
+    - name: Copy minidlna + dependencies
+      copy:
+        src: "{{ item }}"
+        dest: /home/user/.debs
+        owner: user
+        group: user
+        mode: 0644
+      with_items:
+        - debs/minidlna/libid3tag0_amd64.deb
+        - debs/minidlna/minidlna_amd64.deb
+
+    - name: Install minidlna + dependencies
+      apt: deb="{{ item }}"
+      with_items:
+        - /home/user/.debs/libid3tag0_amd64.deb
+        - /home/user/.debs/minidlna_amd64.deb
+
+    - name: Change owner of db_dir
+      file:
+        path: /var/cache/minidlna
+        state: directory
+        recurse: yes
+        owner: user
+        group: sambashare
+
+    - name: Restart Samba+Minidlna services, in all cases
+      service:
+        name: "{{ item }}"
+        state: restarted
+      with_items:
+        - nmbd
+        - smbd
+        - minidlna
+
+    - name: Copy ffmpeg + dependencies
+      copy:
+        src: "{{ item }}"
+        dest: /home/user/.debs
+        owner: user
+        group: user
+        mode: 0644
+      with_items:
+        - debs/ffmpeg/ffmpeg_amd64.deb
+
+    - name: Install ffmpeg + dependencies
+      apt: deb="{{ item }}"
+      with_items:
+        - /home/user/.debs/ffmpeg_amd64.deb
+
+    - name: Create necessary dirs for VSS
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: user
+        group: user
+        mode: 0770
+      with_items:
+        - /media/user/500GB_2/VSS
+        - /media/user/500GB_2/VSS/logs
+        - /media/user/500GB_2/VSS/recordings
+        - /media/user/500GB_2/VSS/recordings/archive
+        - /media/user/500GB_2/VSS/recordings/video
+        - /media/user/500GB_2/VSS/sys 
+
+    - name: Copy a VSS system files into /media/user/500GB_2/VSS/sys, backing up the original if it differs from the copied version. Making scripts executable!
+      copy:
+        src: "{{ item }}"
+        dest: /media/user/500GB_2/VSS/sys
+        owner: user
+        group: user
+        mode: a+x
+        backup: yes
+      with_items:
+        - files/ffmpeg/convertVideo.sh
+        - files/ffmpeg/deleteArchive.sh
+        - files/ffmpeg/recordCam.sh
+        
+    - name: Copy a new crontab config file into /var/spool/cron/crontabs/root, backing up the original if it differs from the copied version
+      copy:
+        src: files/crontab/root
+        dest: /var/spool/cron/crontabs/
+        owner: root
+        group: root
+        mode: 0600
+        backup: yes
+
+    - name: Restarting cron service
+      systemd:
+        name: cron
+        state: restarted
+
+    - name: Copy htop
+      copy:
+        src: "{{ item }}"
+        dest: /home/user/.debs
+        owner: user
+        group: user
+        mode: 0644
+      with_items:
+        - debs/htop/htop_amd64.deb
+
+    - name: Install htop
+      apt: deb="{{ item }}"
+      with_items:
+        - /home/user/.debs/htop_amd64.deb
+
+    - name: Remove .debs dir
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /home/user/.debs

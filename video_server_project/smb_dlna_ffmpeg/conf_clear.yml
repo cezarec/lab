@@ -1,0 +1,48 @@
+---
+  - hosts: server
+    become: true
+    tasks:
+    - name: Remove Minidlna, Samba, FFMPEG + dependencies
+      apt:
+        name:  ['minidlna', 'libid3tag0', 'samba', 'samba-common', 'python-dnspython', 'python-samba', 'tdb-tools', 'ffmpeg', 'htop']
+        state: absent
+        autoremove: yes
+        force_apt_get: yes
+
+    - name: Remove trash dirs and files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/samba
+        - /var/lib/samba
+        - /etc/default/minidlna
+        - /etc/minidlna.conf
+        - /var/cache/minidlna
+        
+    - name: Set default max_user_watches file into /proc/sys/fs/inotify
+      sysctl:
+        name: fs.inotify.max_user_watches
+        value: '8192'
+        sysctl_set: yes
+
+    - name: Remove user minidlna
+      user:
+        name: minidlna
+        state: absent
+        remove: yes
+
+    - name: Remove minidlna and sambashare groups
+      group:
+        name: "{{ item }}"
+        state: absent
+      with_items:
+        - minidlna
+        - sambashare
+
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
+
+    - name: Reboot host
+      reboot:

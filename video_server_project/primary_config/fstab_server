@@ -1,0 +1,21 @@
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sdb1 during installation
+UUID=f3f8c095-b04f-421d-8abb-2a34f4730575 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sdb5 during installation
+UUID=5f849615-3387-4e29-af94-0fb2401cfca8 none            swap    sw              0       0
+# 500GB_1 was on /dev/sda1
+UUID="42BED9C8BED9B49F" /media/user/500GB_1 ntfs-3g defaults,uid=1000 0 0
+# 500GB_2 was on /dev/sdc1
+UUID=16676e8e-9b26-4f41-9593-3bbf76b6259c /media/user/500GB_2 ext4 rw,relatime 0 0
+
+#BLKID info
+#/dev/sdb1: UUID="f3f8c095-b04f-421d-8abb-2a34f4730575" TYPE="ext4" PARTUUID="b9f791f1-01"
+#/dev/sdb5: UUID="5f849615-3387-4e29-af94-0fb2401cfca8" TYPE="swap" PARTUUID="b9f791f1-05"
+#/dev/sda1: LABEL="500GB(1)" UUID="42BED9C8BED9B49F" TYPE="ntfs" PARTUUID="c9409995-01"
+#/dev/sdc1: UUID="16676e8e-9b26-4f41-9593-3bbf76b6259c" TYPE="ext4" PARTUUID="dd7a9409-01"

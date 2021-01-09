@@ -1,0 +1,37 @@
+# Read more about SSH config files: https://linux.die.net/man/5/ssh_config
+Host 192.168.0.30
+    HostName lab
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/vboxlab_ssh_key
+    User user
+#SERVER
+Host 192.168.0.250
+    HostName server
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/server
+    User user
+Host server
+    HostName server
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/server
+    User user
+#LINEAGE
+Host 192.168.0.168
+    HostName lineage
+    Port 2222
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/server
+    User user
+Host 192.168.192.168
+    HostName lineage
+    Port 2222
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/server
+    User user
+Host lineage
+    HostName lineage
+    Port 2222
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/server
+    User user
+#
